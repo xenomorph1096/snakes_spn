@@ -33,9 +33,11 @@ from setuptools import setup, find_packages
 __author__ = "Lulof Pirée"
 __version__ = "v1.0.0"
 
-setup(name='snakes_spn',
-      author=__author__,
-      author_email="lulof.piree@zoho.com",
-      description="Stochastic Petri-Net plugin for the SNAKES library",
-      version=__version__,
-      packages=find_packages())
+setup(
+    name="snakes_spn",
+    author=__author__,
+    author_email="lulof.piree@zoho.com",
+    description="Stochastic Petri-Net plugin for the SNAKES library",
+    version=__version__,
+    packages=["snakes_spn", "spn_tools"],
+)
