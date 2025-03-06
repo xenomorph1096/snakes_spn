@@ -153,6 +153,7 @@ def run_simulation(spn: PetriNet,
 
     passed_time = 0
     current_timestamp = 0
+    spn.globals["time_elapsed"] = current_timestamp
     if max_steps is not None:
         remaining_steps = max_steps
     else:
