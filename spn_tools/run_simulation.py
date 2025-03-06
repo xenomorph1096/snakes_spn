@@ -28,6 +28,7 @@ Functions to run the simulation of a SPN and
 to run N independent repetitions of a simulation.
 Also includes a function to save the output to a file.
 """
+
 from __future__ import annotations
 
 
@@ -50,25 +51,27 @@ from scipy.signal import savgol_filter
 
 import snakes_spn.plugin as spn_plugin
 import snakes.plugins
+
 # To prevent autoformatter from putting `from snk ...` at the top of the file.
 if True:
     snakes.plugins.load([spn_plugin], "snakes.nets", "snk")
     from snk import PetriNet, Place, Expression, Transition, Variable, tInteger
 
 
-def run_repeated_experiment(num_reps: int,
-                            spn: PetriNet,
-                            max_steps: Optional[int] = None,
-                            max_time: float = float("inf"),
-                            verbose: bool = True
-                            ) -> dict[int, dict[str, list[float | int]]]:
+def run_repeated_experiment(
+    num_reps: int,
+    spn: PetriNet,
+    max_steps: Optional[int] = None,
+    max_time: float = float("inf"),
+    verbose: bool = True,
+) -> dict[int, dict[str, list[float | int]]]:
     """
     Same as `run_simulation()`, but repeats the simulation
     from the initial marking `num_reps` times.
     The output is a dictionary mapping each repetition-index
     in [0, `num_reps`-1] to the output log of that simulation.
 
-    @param num_reps: amount of independent 
+    @param num_reps: amount of independent
         repetitions of the simulation from the starting state.
     @type num_reps: int
 
@@ -96,8 +99,7 @@ def run_repeated_experiment(num_reps: int,
         (as returned by `run_simulation()`).
     """
     run_to_log: Dict[int, dict] = {}
-    __print_if(verbose, "Starting repeated experiment "
-               f"with {num_reps} repetitions.")
+    __print_if(verbose, "Starting repeated experiment " f"with {num_reps} repetitions.")
     init_marking = spn.get_marking()
     for run in range(num_reps):
         spn.set_marking(init_marking)
@@ -114,10 +116,9 @@ def __print_if(flag: bool, message: Any):
         print(message)
 
 
-def run_simulation(spn: PetriNet,
-                   max_steps: Optional[int] = None,
-                   max_time: float = float("inf")
-                   ) -> dict[str, list[float | int]]:
+def run_simulation(
+    spn: PetriNet, max_steps: Optional[int] = None, max_time: float = float("inf")
+) -> dict[str, list[float | int]]:
     """
     Simulate a SPN using the Gillespie algorithm either until
     no transitions are enabled, until a maximum amount of steps
@@ -160,6 +161,7 @@ def run_simulation(spn: PetriNet,
         remaining_steps = 1
 
     while remaining_steps > 0:
+        spn.globals["time_elapsed"] = current_timestamp
         if max_steps is not None:
             remaining_steps -= 1
 
@@ -197,7 +199,7 @@ def store_log(log: dict, filepath: str):
 
 def gen_directories(path: str):
     """
-    Recursively generate lowest and all ancestor directories 
+    Recursively generate lowest and all ancestor directories
     in the given path path.
 
     @param: path, file system path to generate. Missing directories
@@ -205,7 +207,7 @@ def gen_directories(path: str):
     @type path: str
     """
 
-    if os.path.exists(path) or path=="":
+    if os.path.exists(path) or path == "":
         return
     else:
         parent = os.path.dirname(path)
@@ -213,7 +215,7 @@ def gen_directories(path: str):
         os.mkdir(path)
 
 
-def load_log(filepath: str, convert_int_keys: bool=True) -> dict:
+def load_log(filepath: str, convert_int_keys: bool = True) -> dict:
     """
     Load a JSON file, convert keys in the top-level
     directory to `int` if they can be interpreted as such.
@@ -243,15 +245,16 @@ def load_log(filepath: str, convert_int_keys: bool=True) -> dict:
     return log
 
 
-def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
-                 x_var: str,
-                 y_vars: Sequence[str],
-                 num_timeboxes: int,
-                 ax: Optional[Axes] = None,
-                 interval_type: Literal["min_max", "confidence"] | None
-                 = "min_max",
-                 conf_ival: float | None = 0.9,
-                 add_legend: bool=True) -> Axes:
+def plot_results(
+    run_to_log: Dict[int, Dict[str, List[Number]]],
+    x_var: str,
+    y_vars: Sequence[str],
+    num_timeboxes: int,
+    ax: Optional[Axes] = None,
+    interval_type: Literal["min_max", "confidence"] | None = "min_max",
+    conf_ival: float | None = 0.9,
+    add_legend: bool = True,
+) -> Axes:
     """
     Create plots of desired variables,
     averaged over multiple independent runs.
@@ -283,7 +286,7 @@ def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
     @param run_to_log: collection of independent repetitions of an experiment,
         each repetition is stored as a dictionary mapping the name
         of a variable to a vector of observed values
-        (in chronological order, by x-variable). 
+        (in chronological order, by x-variable).
     @type run_to_log: Dict[int, Dict[str, List[Number]]]
 
     @param x_var: name of the x-variable ('time-variable'),
@@ -305,7 +308,7 @@ def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
         bins and averaged out per bin (evenly-spaced with respect to the x-var).
     @type num_timeboxes: int
 
-    @param interval_type: uncertainty interval around the graph 
+    @param interval_type: uncertainty interval around the graph
         mean-value lines. Can be left out (value `None`),
         the minimum and maximum observed values in each timebox
         (value `'min_max'`), or a `100*conf_ival`% confidence interval
@@ -331,10 +334,10 @@ def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    y_data, timebox_duration = aggregate_dataset_in_timeboxes(run_to_log,
-                                                          x_var, y_vars, 
-                                                          num_timeboxes)
-    x_values = [(i+0.5)*timebox_duration for i in range(num_timeboxes)]
+    y_data, timebox_duration = aggregate_dataset_in_timeboxes(
+        run_to_log, x_var, y_vars, num_timeboxes
+    )
+    x_values = [(i + 0.5) * timebox_duration for i in range(num_timeboxes)]
 
     for y_var_name in y_vars:
         y_mean_values = np.mean(y_data[y_var_name], axis=0)
@@ -345,14 +348,13 @@ def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
             y_ival_max = np.max(y_data[y_var_name], axis=0)
         elif interval_type == "confidence":
             y_std_values = np.std(y_data[y_var_name], axis=0, ddof=1)
-            y_ival_min, y_ival_max = stats.norm.interval(conf_ival,
-                                                         loc=y_mean_values,
-                                                         scale=y_std_values)
+            y_ival_min, y_ival_max = stats.norm.interval(
+                conf_ival, loc=y_mean_values, scale=y_std_values
+            )
         elif interval_type is not None:
             raise ValueError("Unknown interval type '{interval_type}'.")
         if interval_type is not None:
-            ax.fill_between(x_values, y_ival_min, y_ival_max,
-                            alpha=0.35)
+            ax.fill_between(x_values, y_ival_min, y_ival_max, alpha=0.35)
 
     if add_legend:
         ax.legend()
@@ -362,11 +364,13 @@ def plot_results(run_to_log: Dict[int, Dict[str, List[Number]]],
     return ax
 
 
-def __find_y_data(y_vars: Sequence[str],
-                  timestamps: Dict[int, List[float]],
-                  run_to_log: Dict[int, Dict[str, List[Number]]],
-                  num_timeboxes: int,
-                  timebox_size: float) -> Dict[str, List[List[Number]]]:
+def __find_y_data(
+    y_vars: Sequence[str],
+    timestamps: Dict[int, List[float]],
+    run_to_log: Dict[int, Dict[str, List[Number]]],
+    num_timeboxes: int,
+    timebox_size: float,
+) -> Dict[str, List[List[Number]]]:
     """
     For each requested variable, collect all the vectors
     of observations in a list (i.e., a matrix, whose rows
@@ -380,16 +384,20 @@ def __find_y_data(y_vars: Sequence[str],
             timestamps_vector = timestamps[run_idx]
             run_values = run_to_log[run_idx][y_var_name]
             aggregated_run_values = aggregate_in_timeboxes(
-                timestamps_vector, run_values, num_timeboxes, timebox_size)
+                timestamps_vector, run_values, num_timeboxes, timebox_size
+            )
             logs.append(aggregated_run_values)
 
         y_data[y_var_name] = logs
     return y_data
 
+
 def aggregate_dataset_in_timeboxes(
-        run_to_log: Dict[int, Dict[str, List[Number]]],
-        x_var: str, y_vars: Sequence[str], 
-        num_timeboxes:int) -> Tuple[Dict[str, List[List[Number]]], float]:
+    run_to_log: Dict[int, Dict[str, List[Number]]],
+    x_var: str,
+    y_vars: Sequence[str],
+    num_timeboxes: int,
+) -> Tuple[Dict[str, List[List[Number]]], float]:
     """
     High-level wrapper around `aggregate_in_timeboxes`.
     Use the maximum value of the x_var in the dataset (`run_to_log`)
@@ -399,7 +407,7 @@ def aggregate_dataset_in_timeboxes(
     @param run_to_log: collection of independent repetitions of an experiment,
         each repetition is stored as a dictionary mapping the name
         of a variable to a vector of observed values
-        (in chronological order, by x-variable). 
+        (in chronological order, by x-variable).
     @type run_to_log: Dict[int, Dict[str, List[Number]]]
 
     @param x_var: name of the x-variable ('time-variable'),
@@ -421,17 +429,20 @@ def aggregate_dataset_in_timeboxes(
     timestamps: Dict[int, List[float | int]]
     timestamps = {run_idx: log[x_var] for run_idx, log in run_to_log.items()}
     max_time = max(max(timestamps.values(), key=lambda x: x[-1]))
-    timebox_duration = max_time/num_timeboxes
+    timebox_duration = max_time / num_timeboxes
 
-    y_data = __find_y_data(y_vars, timestamps, run_to_log, num_timeboxes,
-                           timebox_duration)
+    y_data = __find_y_data(
+        y_vars, timestamps, run_to_log, num_timeboxes, timebox_duration
+    )
     return y_data, timebox_duration
 
 
-def aggregate_in_timeboxes(timestamps: Sequence[float],
-                           measurements: Sequence[float],
-                           num_timeboxes: int,
-                           timebox_size: float) -> Sequence[float]:
+def aggregate_in_timeboxes(
+    timestamps: Sequence[float],
+    measurements: Sequence[float],
+    num_timeboxes: int,
+    timebox_size: float,
+) -> Sequence[float]:
     """
     Take `m` pairs of a timestamp `t` and a measurement `y`
     (where the timestamps may not be evenly spaced!),
@@ -467,7 +478,7 @@ def aggregate_in_timeboxes(timestamps: Sequence[float],
     """
     assert len(measurements) == len(timestamps)
 
-    timebox_endtimes = [i * timebox_size for i in range(1, 1+num_timeboxes)]
+    timebox_endtimes = [i * timebox_size for i in range(1, 1 + num_timeboxes)]
 
     # Index of the current timebox
     curr_timebox = 0
@@ -492,28 +503,29 @@ def aggregate_in_timeboxes(timestamps: Sequence[float],
 
     __agg_curr_timebox(output, curr_timebox, num_points_added)
 
-    if curr_timebox != num_timeboxes-1:
+    if curr_timebox != num_timeboxes - 1:
         for remaining_box in range(curr_timebox, num_timeboxes):
             output[remaining_box] = output[curr_timebox]
     return output
 
 
-def __agg_curr_timebox(output: Sequence[float],
-                       curr_timebox: int,
-                       num_points_added: int):
+def __agg_curr_timebox(
+    output: Sequence[float], curr_timebox: int, num_points_added: int
+):
     """
     Resolve the definite aggregated value for the current timebox.
     """
     if num_points_added == 0 and curr_timebox == 0:
         output[curr_timebox] = 0
     elif num_points_added == 0:
-        output[curr_timebox] = output[curr_timebox-1]
+        output[curr_timebox] = output[curr_timebox - 1]
     elif num_points_added > 0:
-        output[curr_timebox] = output[curr_timebox]/num_points_added
+        output[curr_timebox] = output[curr_timebox] / num_points_added
+
 
 def get_num_timeboxes_for_fixed_duration(
-        run_to_log: dict[int, dict[str, list[Number]]],
-        duration: float) -> int:
+    run_to_log: dict[int, dict[str, list[Number]]], duration: float
+) -> int:
     """
     Find the number `n` such that `aggregate_dataset_in_timeboxes`
     with `num_timeboxes=n` returns an aggregation in which
@@ -533,6 +545,7 @@ def get_num_timeboxes_for_fixed_duration(
     max_time = get_max_timestamp(run_to_log)
     n = round(max_time / duration)
     return n
+
 
 def get_max_timestamp(run_to_log: dict[int, dict[str, list[Number]]]) -> float:
     """
