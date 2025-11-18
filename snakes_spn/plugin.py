@@ -8,25 +8,26 @@ Copyright (C) 2022 Lulof Pirée
 
 This file is part of the snakes_spn program.
 
-This program is free software: 
-you can redistribute it and/or modify it under the terms 
-of the GNU General Public License as published by the Free Software Foundation, 
+This program is free software:
+you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, 
-but WITHOUT ANY WARRANTY; 
-without even the implied warranty of MERCHANTABILITY 
-or FITNESS FOR A PARTICULAR PURPOSE. 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License 
-along with this program. 
-If not, see <https://www.gnu.org/licenses/>. 
+You should have received a copy of the GNU General Public License
+along with this program.
+If not, see <https://www.gnu.org/licenses/>.
 
 --------------------------------------------------------------------------------
 File content:
 Python script providing the SPN features to the SNAKES plugin interface.
 """
+
 from __future__ import annotations
 from typing import Optional, Callable, Tuple, List, Type, Any
 from types import ModuleType
@@ -41,7 +42,7 @@ from snakes.nets import Expression, Token
 import snakes.nets
 
 # It is asserted that probabilities are a float in [0, 1].
-# However, numerical errors may make them overshoot 1 
+# However, numerical errors may make them overshoot 1
 # by a non-significant amount.
 PROB_ERROR_MARGIN = 1e-5
 
@@ -61,10 +62,10 @@ def gen_transition_class(module: ModuleType) -> Type[snakes.nets.Transition]:
         def __init__(self, name, guard, **args) -> None:
             """
             @param args: plugin arguments
-            @keyword stats: initial status of the Transition 
+            @keyword stats: initial status of the Transition
                 (defaults to `TransitionStatus(False, None)`)
             @type status: Optional[TransitionStatus]
-            @keyword rate_function: expression computing the 
+            @keyword rate_function: expression computing the
                 current rate of the exponentially-distributed delay.
             @type rate_function: Expression
             """
@@ -86,8 +87,8 @@ def gen_transition_class(module: ModuleType) -> Type[snakes.nets.Transition]:
             current_rate: Token = self._rate.bind(binding)
             return float(current_rate.value)
 
-        def _check(self, binding: Substitution, tokens: bool, input:bool) -> bool:
-            output = module.Transition._check(self, binding, tokens,input)
+        def _check(self, binding: Substitution, tokens: bool, input: bool) -> bool:
+            output = module.Transition._check(self, binding, tokens, input)
             output &= self.get_current_rate(binding) > 0
             return output
 
@@ -97,8 +98,10 @@ def gen_transition_class(module: ModuleType) -> Type[snakes.nets.Transition]:
             return output
 
         def __repr__(self) -> str:
-            output = f"Transition({repr(self.name)}, {repr(self.guard)}" \
+            output = (
+                f"Transition({repr(self.name)}, {repr(self.guard)}"
                 + f", rate_function={repr(self._rate)})"
+            )
             return output
 
         def __str__(self) -> str:
@@ -121,17 +124,17 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
 
     class PetriNet(module.PetriNet):
 
-        def sample_next_transition(self,
-                                   rng: Optional[Callable[[], float]] = None
-                                   ) -> Tuple[str, Substitution, float]:
+        def sample_next_transition(
+            self, rng: Optional[Callable[[], float]] = None
+        ) -> Tuple[str, Substitution, float]:
             """
             Sample the next transition to fire,
             using an exponential distribution of the delay for each transition,
             with as parameter the rate given by the transition.
             This follows Gillespie's algorithm
-            (see, e.g., 
+            (see, e.g.,
                 p141, chapter 7 by Ivan Mura in the book
-                'Modeling in Systems Biology The Petri Net Approach' 
+                'Modeling in Systems Biology The Petri Net Approach'
                 (2011, Springer-Verlag London Limited)
                 editors I. Kock, W. Reisig and F. Schreiber
             ).
@@ -150,14 +153,13 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
             @return time_passed: float, the time passed
                 until the given transition since the previous
                 transition (or start of the simulation).
-                Note that this assumes 
+                Note that this assumes
                 memoryless exponentially distributed delays.
             """
             if rng is None:
                 rng = random.random
 
-            trans_to_mode = {trans.name: trans.modes()
-                           for trans in self.transition()}
+            trans_to_mode = {trans.name: trans.modes() for trans in self.transition()}
 
             # Lists of names, modes (Substitutions/bindings) and rates
             # of all enabled transitions.
@@ -201,18 +203,15 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
                 trans_idx += 1
                 cum_prob += enabled_rates[trans_idx] / sum_rates
 
-            assert 0 < cum_prob <= 1+PROB_ERROR_MARGIN, \
-                "Cannot happen: cumulative probability exceeded 1. " \
-                    +f"Got p={cum_prob:.3f}"
+            assert 0 < cum_prob <= 1 + PROB_ERROR_MARGIN, (
+                "Cannot happen: cumulative probability exceeded 1. "
+                + f"Got p={cum_prob:.3f}"
+            )
 
-            output = (enabled_transitions[trans_idx],
-                      enabled_modes[trans_idx],
-                      delay)
+            output = (enabled_transitions[trans_idx], enabled_modes[trans_idx], delay)
             return output
 
-        def step(self,
-                 rng: Optional[Callable[[], float]] = None
-                 ) -> float | None:
+        def step(self, rng: Optional[Callable[[], float]] = None) -> float | None:
             """
             Sample and fire the next transition,
             and return the time passed (since previous firing).
@@ -226,13 +225,14 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
             @return time_passed: float | None, the time passed
                 until the given transition since the previous
                 transition (or start of the simulation).
-                Note that this assumes 
+                Note that this assumes
                 memoryless exponentially distributed delays.
                 Returns `None` if no transition is available.
             """
             try:
                 trans_name, mode, delay = self.sample_next_transition(rng)
                 self.transition(trans_name).fire(mode)
+                self.globals["delay"] = delay
                 return delay
             except SnakesError as e:
                 return None
@@ -243,7 +243,7 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
 def gen_place_class(module: ModuleType) -> Type[snakes.nets.Place]:
     """
     Given a configured version of `snakes.net` as `module`,
-    create a new subclass of `module.Place` 
+    create a new subclass of `module.Place`
     optimized to use exactly 1 integer token.
 
     @param module: Python module providing a subclassable class `Place`.
@@ -254,13 +254,19 @@ def gen_place_class(module: ModuleType) -> Type[snakes.nets.Place]:
 
     class Place(module.Place):
 
-        def __init__(self, name: str, tokens: Iterable[Any] | Any = [],
-                     check: type = None, **args):
+        def __init__(
+            self,
+            name: str,
+            tokens: Iterable[Any] | Any = [],
+            check: type = None,
+            **args,
+        ):
             if isinstance(tokens, Iterable) and len(tokens) == 0:
                 tokens = [0]
             if check is not None and check is not module.tInteger:
                 raise ConstraintError(
-                    "Stochastic Petri Nets only allow `tInteger` type networks.")
+                    "Stochastic Petri Nets only allow `tInteger` type networks."
+                )
 
             module.Place.__init__(self, name, tokens, module.tInteger, **args)
             self.__check_token_constraint()
@@ -286,17 +292,21 @@ def gen_place_class(module: ModuleType) -> Type[snakes.nets.Place]:
             module.Place.remove(self, tokens, **args)
             self.__check_token_constraint()
 
-
         def __check_token_constraint(self):
             if len(self.tokens) > 1:
                 raise ConstraintError(
-                    "Stochastic Petri Nets only allow 1 `tInteger` token per place.")
-        
+                    "Stochastic Petri Nets only allow 1 `tInteger` token per place."
+                )
+
     return Place
 
+
 @snakes.plugins.plugin("snakes.nets")
-def extend(module: ModuleType
-           ) -> Tuple[Type[snakes.nets.Transition], Type[snakes.nets.PetriNet], Type[snakes.nets.Place]]:
+def extend(
+    module: ModuleType,
+) -> Tuple[
+    Type[snakes.nets.Transition], Type[snakes.nets.PetriNet], Type[snakes.nets.Place]
+]:
 
     Transition = gen_transition_class(module)
     PetriNet = gen_petrinet_class(module)
