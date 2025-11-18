@@ -231,8 +231,8 @@ def gen_petrinet_class(module: ModuleType) -> Type[snakes.nets.PetriNet]:
             """
             try:
                 trans_name, mode, delay = self.sample_next_transition(rng)
-                self.transition(trans_name).fire(mode)
                 self.globals["delay"] = delay
+                self.transition(trans_name).fire(mode)
                 return delay
             except SnakesError as e:
                 return None
